@@ -1,0 +1,517 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src https://ntfy.sh; img-src data:; form-action 'self'; base-uri 'none'">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Status">
+<title>Termine &amp; Status</title>
+<style>
+  :root {
+    --bg: #f6f5f2;
+    --card: #ffffff;
+    --text: #1d1d1f;
+    --muted: #6b6b70;
+    --line: #e4e2dd;
+    --busy: #3b6fd8;
+    --busy-bg: #e3ebfb;
+    --tent: #8a8f9c;
+    --tent-bg: #eef0f3;
+    --oof: #8b5cc7;
+    --oof-bg: #efe7f9;
+    --call: #d93b3b;
+    --meeting: #e0892b;
+    --free: #2f9e5b;
+    --away: #8b5cc7;
+    --offline: #9a9aa0;
+    --now: #d93b3b;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #141416;
+      --card: #1e1e21;
+      --text: #f2f2f4;
+      --muted: #9b9ba3;
+      --line: #2e2e33;
+      --busy: #6d97f0;
+      --busy-bg: #22304d;
+      --tent: #a3a8b4;
+      --tent-bg: #2a2c31;
+      --oof: #b28ae6;
+      --oof-bg: #33284a;
+      --call: #f06161;
+      --meeting: #f0a24e;
+      --free: #4cc27c;
+      --away: #b28ae6;
+      --offline: #77777e;
+      --now: #f06161;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #141416; --card: #1e1e21; --text: #f2f2f4; --muted: #9b9ba3; --line: #2e2e33;
+    --busy: #6d97f0; --busy-bg: #22304d; --tent: #a3a8b4; --tent-bg: #2a2c31;
+    --oof: #b28ae6; --oof-bg: #33284a; --call: #f06161; --meeting: #f0a24e;
+    --free: #4cc27c; --away: #b28ae6; --offline: #77777e; --now: #f06161;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font: 16px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  main {
+    max-width: 520px;
+    margin: 0 auto;
+    padding: max(16px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom));
+  }
+
+  .status {
+    background: var(--card);
+    border-radius: 20px;
+    padding: 20px;
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    box-shadow: 0 1px 2px rgba(0,0,0,.05);
+  }
+  .dot {
+    flex: none;
+    width: 52px; height: 52px;
+    border-radius: 50%;
+    background: var(--state-color, var(--offline));
+    position: relative;
+  }
+  .dot.pulse::after {
+    content: "";
+    position: absolute; inset: 0;
+    border-radius: 50%;
+    background: var(--state-color);
+    animation: pulse 1.8s ease-out infinite;
+  }
+  @keyframes pulse { from { transform: scale(1); opacity: .5; } to { transform: scale(1.7); opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) { .dot.pulse::after { animation: none; } }
+  .status .who { font-size: 13px; color: var(--muted); }
+  .status .headline { font-size: 26px; font-weight: 700; letter-spacing: -.01em; line-height: 1.15; }
+  .status .sub { font-size: 15px; color: var(--muted); margin-top: 2px; }
+
+  .days {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 16px 0 12px;
+    scrollbar-width: none;
+  }
+  .days::-webkit-scrollbar { display: none; }
+  .chip {
+    flex: none;
+    border: 1px solid var(--line);
+    background: var(--card);
+    color: var(--text);
+    border-radius: 999px;
+    padding: 7px 14px;
+    font: inherit;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  .chip[aria-pressed="true"] { background: var(--text); color: var(--bg); border-color: var(--text); }
+  .chip .count { opacity: .6; margin-left: 4px; }
+
+  .day {
+    background: var(--card);
+    border-radius: 20px;
+    padding: 16px 16px 16px 8px;
+    box-shadow: 0 1px 2px rgba(0,0,0,.05);
+  }
+  .allday {
+    margin: 0 0 12px 8px;
+    padding: 8px 12px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .empty { color: var(--muted); padding: 24px 8px; text-align: center; }
+
+  .timeline { position: relative; margin-left: 44px; }
+  .hour {
+    position: absolute; left: 0; right: 0;
+    border-top: 1px solid var(--line);
+  }
+  .hour span {
+    position: absolute; left: -44px; top: -9px;
+    width: 38px; text-align: right;
+    font-size: 12px; color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .event {
+    position: absolute;
+    border-radius: 8px;
+    padding: 3px 8px;
+    font-size: 13px;
+    font-weight: 600;
+    overflow: hidden;
+    border-left: 4px solid;
+    font-variant-numeric: tabular-nums;
+  }
+  .event.b { background: var(--busy-bg); border-color: var(--busy); color: var(--text); }
+  .event.t {
+    background: repeating-linear-gradient(135deg, var(--tent-bg) 0 8px, transparent 8px 14px);
+    border-color: var(--tent); color: var(--text);
+  }
+  .event.o { background: var(--oof-bg); border-color: var(--oof); color: var(--text); }
+  .event.past { opacity: .45; }
+  .event.current { box-shadow: 0 0 0 2px var(--busy); }
+  .event small { display: block; font-weight: 400; color: var(--muted); }
+  .now {
+    position: absolute; left: -6px; right: 0;
+    border-top: 2px solid var(--now);
+    z-index: 2;
+  }
+  .now::before {
+    content: "";
+    position: absolute; left: -4px; top: -6px;
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--now);
+  }
+
+  .legend {
+    display: flex; flex-wrap: wrap; gap: 14px;
+    font-size: 13px; color: var(--muted);
+    margin: 14px 4px 0;
+  }
+  .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+  footer { font-size: 12px; color: var(--muted); margin: 14px 4px 0; }
+
+  .setup {
+    background: var(--card);
+    border-radius: 20px;
+    padding: 20px;
+  }
+  .setup h1 { font-size: 22px; margin: 0 0 8px; }
+  .setup p { color: var(--muted); margin: 0 0 16px; }
+  .setup input {
+    width: 100%;
+    font: inherit;
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    background: var(--bg);
+    color: var(--text);
+  }
+  .setup button {
+    margin-top: 12px;
+    width: 100%;
+    font: inherit; font-weight: 600;
+    padding: 12px;
+    border-radius: 10px;
+    border: 0;
+    background: var(--text);
+    color: var(--bg);
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+<main id="app"></main>
+
+<script>
+(() => {
+  const SERVER = 'https://ntfy.sh';
+  const POLL_MS = 20000;
+  const OFFLINE_AFTER_MIN = 45;
+  const HOUR_PX = 56;
+  const STORAGE_KEY = 'status-topic';
+
+  const app = document.getElementById('app');
+  let topic = '';
+  let snapshot = null;
+  let lastId = null;
+  let selectedDay = null;
+  let fetchError = false;
+  let lastFetch = null;
+
+  // ---------- helpers ----------
+  const pad = n => String(n).padStart(2, '0');
+  const dateKey = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  const toMin = hhmm => { const [h, m] = hhmm.split(':').map(Number); return h * 60 + m; };
+  const nowMin = () => { const d = new Date(); return d.getHours() * 60 + d.getMinutes(); };
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const range = t => t.replace('-', '–');
+
+  function storageGet() { try { return localStorage.getItem(STORAGE_KEY) || ''; } catch { return ''; } }
+  function storageSet(v) { try { localStorage.setItem(STORAGE_KEY, v); } catch { /* storage unavailable */ } }
+
+  function dayLabel(key) {
+    const today = dateKey(new Date());
+    const t = new Date(); t.setDate(t.getDate() + 1);
+    if (key === today) return 'Heute';
+    if (key === dateKey(t)) return 'Morgen';
+    const [y, m, d] = key.split('-').map(Number);
+    const date = new Date(y, m - 1, d);
+    return date.toLocaleDateString('de-DE', { weekday: 'short', day: 'numeric', month: 'numeric' });
+  }
+
+  // ---------- data ----------
+  // Anyone who knows the channel name can post to it, so only well-formed values are accepted.
+  function sanitize(raw) {
+    const TIME = /^([01]\d|2[0-4]):[0-5]\d$/;
+    const DATE = /^\d{4}-\d{2}-\d{2}$/;
+    if (!raw || typeof raw !== 'object') return null;
+    const days = [];
+    for (const d of (Array.isArray(raw.days) ? raw.days.slice(0, 14) : [])) {
+      if (!d || !DATE.test(d.d)) continue;
+      const events = (Array.isArray(d.e) ? d.e : [])
+        .filter(e => e && TIME.test(e.s) && TIME.test(e.e) && ['b', 't', 'o'].includes(e.k))
+        .slice(0, 40)
+        .map(e => ({ s: e.s, e: e.e, k: e.k }));
+      days.push({ d: d.d, a: String(d.a || '').replace(/[^bto]/g, '').slice(0, 3), e: events });
+    }
+    return {
+      name: String(raw.name || '').slice(0, 40),
+      status: ['call', 'meeting', 'away', 'free', 'paused'].includes(raw.status) ? raw.status : 'free',
+      since: TIME.test(raw.since) ? raw.since : '',
+      until: TIME.test(raw.until) ? raw.until : '',
+      next: /^\d\d:\d\d-\d\d:\d\d$/.test(raw.next) ? raw.next : '',
+      ts: typeof raw.ts === 'string' && !isNaN(Date.parse(raw.ts)) ? raw.ts : new Date(0).toISOString(),
+      days,
+    };
+  }
+
+  async function poll() {
+    if (!topic || topic === 'demo') return;
+    try {
+      const since = lastId || '12h';
+      const res = await fetch(`${SERVER}/${encodeURIComponent(topic)}-data/json?poll=1&since=${encodeURIComponent(since)}`, { cache: 'no-store' });
+      if (!res.ok) throw new Error(res.status);
+      const text = await res.text();
+      for (const line of text.split('\n')) {
+        if (!line.trim()) continue;
+        const msg = JSON.parse(line);
+        if (msg.event !== 'message' || !msg.message) continue;
+        lastId = msg.id;
+        try { snapshot = sanitize(JSON.parse(msg.message)) || snapshot; } catch { /* not a snapshot */ }
+      }
+      fetchError = false;
+      lastFetch = new Date();
+    } catch {
+      fetchError = true;
+    }
+    render();
+  }
+
+  function demoSnapshot() {
+    const today = new Date();
+    const days = [];
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(today); d.setDate(d.getDate() + i);
+      const wd = d.getDay();
+      const e = (wd === 0 || wd === 6) ? [] : [
+        { s: '09:00', e: '09:15', k: 'b' },
+        { s: '10:00', e: '11:00', k: 'b' },
+        { s: '11:00', e: '11:30', k: 't' },
+        { s: '13:30', e: '14:30', k: 'b' },
+        { s: '16:00', e: '17:00', k: i === 2 ? 'o' : 'b' },
+      ];
+      days.push({ d: dateKey(d), a: '', e });
+    }
+    const n = new Date();
+    return {
+      v: 1, name: 'Patti', status: 'call',
+      since: `${pad(n.getHours())}:${pad(Math.max(0, n.getMinutes() - 7))}`,
+      until: '', next: '', days, ts: n.toISOString(),
+    };
+  }
+
+  // ---------- rendering ----------
+  function statusView() {
+    if (!snapshot) {
+      return { color: 'var(--offline)', headline: 'Noch keine Daten', sub: 'Sobald der Rechner läuft, erscheint hier der Status.', pulse: false, who: '' };
+    }
+    const s = snapshot;
+    const ageMin = (Date.now() - Date.parse(s.ts)) / 60000;
+    const who = s.name || '';
+    if (!(ageMin < OFFLINE_AFTER_MIN)) {
+      const t = new Date(Date.parse(s.ts));
+      const when = dateKey(t) === dateKey(new Date())
+        ? `${pad(t.getHours())}:${pad(t.getMinutes())}`
+        : t.toLocaleDateString('de-DE', { weekday: 'short', day: 'numeric', month: 'numeric' }) + `, ${pad(t.getHours())}:${pad(t.getMinutes())}`;
+      return { color: 'var(--offline)', headline: 'Rechner aus', sub: `Letzte Meldung ${when} · Kalender siehe unten`, pulse: false, who };
+    }
+    switch (s.status) {
+      case 'call':
+        return { color: 'var(--call)', headline: 'Im Call', sub: `seit ${s.since}` + (s.until ? ` · Termin bis ${s.until}` : ''), pulse: true, who };
+      case 'meeting':
+        return { color: 'var(--meeting)', headline: 'Im Termin', sub: `laut Kalender bis ${s.until}`, pulse: false, who };
+      case 'paused':
+        return { color: 'var(--offline)', headline: 'Pausiert', sub: 'Status und Kalender werden gerade nicht geteilt', pulse: false, who };
+      case 'away':
+        return { color: 'var(--away)', headline: 'Abwesend', sub: 'laut Kalender', pulse: false, who };
+      default:
+        return { color: 'var(--free)', headline: 'Frei', sub: s.next ? `Nächster Termin ${range(s.next)}` : 'Heute keine weiteren Termine', pulse: false, who };
+    }
+  }
+
+  function layoutColumns(events) {
+    // Greedy column assignment for overlapping events.
+    const sorted = events.map(e => ({ ...e, a: toMin(e.s), b: toMin(e.e) })).sort((x, y) => x.a - y.a || y.b - x.b);
+    const groups = [];
+    let group = [], groupEnd = -1;
+    for (const ev of sorted) {
+      if (ev.a >= groupEnd && group.length) { groups.push(group); group = []; }
+      group.push(ev);
+      groupEnd = Math.max(groupEnd, ev.b);
+    }
+    if (group.length) groups.push(group);
+    for (const g of groups) {
+      const colEnds = [];
+      for (const ev of g) {
+        let col = colEnds.findIndex(end => end <= ev.a);
+        if (col === -1) { col = colEnds.length; colEnds.push(0); }
+        colEnds[col] = ev.b;
+        ev.col = col;
+      }
+      for (const ev of g) ev.cols = colEnds.length;
+    }
+    return sorted;
+  }
+
+  function dayView(day) {
+    const isToday = day.d === dateKey(new Date());
+    let html = '';
+    const allDay = { o: 'Ganztägig abwesend', b: 'Ganztägig beschäftigt', t: 'Ganztägig mit Vorbehalt' };
+    for (const k of (day.a || '').split('')) {
+      if (!allDay[k]) continue;
+      const bg = k === 'o' ? 'var(--oof-bg)' : k === 't' ? 'var(--tent-bg)' : 'var(--busy-bg)';
+      html += `<div class="allday" style="background:${bg}">${allDay[k]}</div>`;
+    }
+    if (!day.e.length) {
+      return html + `<div class="empty">Keine Termine</div>`;
+    }
+
+    const events = layoutColumns(day.e);
+    let startH = 8, endH = 18;
+    for (const ev of events) {
+      startH = Math.min(startH, Math.floor(ev.a / 60));
+      endH = Math.max(endH, Math.ceil(ev.b / 60));
+    }
+    if (isToday) {
+      const n = nowMin();
+      startH = Math.min(startH, Math.floor(n / 60));
+      endH = Math.max(endH, Math.ceil((n + 1) / 60));
+    }
+    startH = Math.max(0, startH); endH = Math.min(24, endH);
+    const y = min => (min - startH * 60) / 60 * HOUR_PX;
+
+    let t = `<div class="timeline" style="height:${(endH - startH) * HOUR_PX}px">`;
+    for (let h = startH; h <= endH; h++) {
+      t += `<div class="hour" style="top:${y(h * 60)}px"><span>${pad(h)}:00</span></div>`;
+    }
+    const n = nowMin();
+    const kindText = { b: '', t: 'mit Vorbehalt', o: 'abwesend' };
+    for (const ev of events) {
+      const top = y(ev.a) + 1;
+      const height = Math.max(20, y(ev.b) - y(ev.a) - 2);
+      const width = 100 / ev.cols;
+      const cls = ['event', ev.k];
+      if (isToday && ev.b <= n) cls.push('past');
+      if (isToday && ev.a <= n && ev.b > n) cls.push('current');
+      const showSmall = kindText[ev.k] && height >= 38;
+      t += `<div class="${cls.join(' ')}" style="top:${top}px;height:${height}px;left:calc(${ev.col * width}% + 4px);width:calc(${width}% - 6px)">`
+        + `${ev.s}–${ev.e}${showSmall ? `<small>${kindText[ev.k]}</small>` : ''}</div>`;
+    }
+    if (isToday && n >= startH * 60 && n <= endH * 60) {
+      t += `<div class="now" style="top:${y(n)}px"></div>`;
+    }
+    t += '</div>';
+    return html + t;
+  }
+
+  function renderSetup() {
+    app.innerHTML = `
+      <div class="setup">
+        <h1>Einrichten</h1>
+        <p>Gib den Kanalnamen ein, den du bekommen hast (z.&nbsp;B. <code>status-abc123…</code>).</p>
+        <form id="f">
+          <input id="t" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="status-…" required>
+          <button type="submit">Speichern</button>
+        </form>
+      </div>`;
+    document.getElementById('f').addEventListener('submit', e => {
+      e.preventDefault();
+      const v = document.getElementById('t').value.trim();
+      if (!v) return;
+      location.hash = v;
+    });
+  }
+
+  function render() {
+    if (!topic) { renderSetup(); return; }
+    const st = statusView();
+    const todayKey = dateKey(new Date());
+    const days = (snapshot?.days || []).filter(d => d.d >= todayKey);
+    if (!days.find(d => d.d === selectedDay)) selectedDay = days[0]?.d || null;
+    const day = days.find(d => d.d === selectedDay);
+
+    let html = `
+      <section class="status" style="--state-color:${st.color}" aria-live="polite">
+        <div class="dot${st.pulse ? ' pulse' : ''}"></div>
+        <div>
+          ${st.who ? `<div class="who">${esc(st.who)}</div>` : ''}
+          <div class="headline">${esc(st.headline)}</div>
+          <div class="sub">${esc(st.sub)}</div>
+        </div>
+      </section>`;
+
+    if (days.length) {
+      html += `<nav class="days">` + days.map(d => {
+        const count = d.e.length ? `<span class="count">${d.e.length}</span>` : '';
+        return `<button class="chip" data-day="${d.d}" aria-pressed="${d.d === selectedDay}">${dayLabel(d.d)}${count}</button>`;
+      }).join('') + `</nav>`;
+      html += `<section class="day">${dayView(day)}</section>`;
+      html += `<div class="legend">
+          <span><i style="background:var(--busy)"></i>Beschäftigt</span>
+          <span><i style="background:var(--tent)"></i>Mit Vorbehalt</span>
+          <span><i style="background:var(--oof)"></i>Abwesend</span>
+        </div>`;
+    }
+
+    const updated = lastFetch ? `${pad(lastFetch.getHours())}:${pad(lastFetch.getMinutes())}` : '–';
+    html += `<footer>${fetchError ? 'Verbindung fehlgeschlagen, neuer Versuch läuft … · ' : ''}Aktualisiert ${updated} · lädt automatisch neu</footer>`;
+
+    const scrollX = app.querySelector('.days')?.scrollLeft || 0;
+    app.innerHTML = html;
+    const nav = app.querySelector('.days');
+    if (nav) {
+      nav.scrollLeft = scrollX;
+      nav.addEventListener('click', e => {
+        const b = e.target.closest('.chip');
+        if (!b) return;
+        selectedDay = b.dataset.day;
+        render();
+      });
+    }
+  }
+
+  // ---------- startup ----------
+  function init() {
+    const fromHash = decodeURIComponent(location.hash.slice(1)).trim();
+    const next = fromHash || storageGet();
+    if (next !== topic) { topic = next; snapshot = null; lastId = null; }
+    if (fromHash && fromHash !== 'demo') storageSet(fromHash);
+    if (topic === 'demo') { snapshot = sanitize(demoSnapshot()); lastFetch = new Date(); }
+    render();
+    poll();
+  }
+
+  window.addEventListener('hashchange', init);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) poll(); });
+  setInterval(poll, POLL_MS);
+  setInterval(render, 30000);
+  init();
+})();
+</script>
+</body>
+</html>
