@@ -6,211 +6,244 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Status">
-<title>Termine &amp; Status</title>
+<meta name="theme-color" content="#f5f4f1" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#121214" media="(prefers-color-scheme: dark)">
+<title>Status Indicator</title>
 <style>
   :root {
-    --bg: #f6f5f2;
+    --bg: #f5f4f1;
     --card: #ffffff;
-    --text: #1d1d1f;
-    --muted: #6b6b70;
-    --line: #e4e2dd;
-    --busy: #3b6fd8;
-    --busy-bg: #e3ebfb;
-    --tent: #8a8f9c;
-    --tent-bg: #eef0f3;
-    --oof: #8b5cc7;
-    --oof-bg: #efe7f9;
-    --call: #d93b3b;
-    --meeting: #e0892b;
-    --free: #2f9e5b;
+    --card-2: #faf9f7;
+    --text: #1c1c1e;
+    --muted: #6e6e73;
+    --faint: #a1a1a6;
+    --line: #e6e4df;
+    --shadow: 0 1px 2px rgba(0,0,0,.04), 0 6px 20px rgba(0,0,0,.05);
+
+    --busy: #3a6fd8;   --busy-bg: #e5edfc;
+    --tent: #8a8f9c;   --tent-bg: #eff0f3;
+    --oof: #8b5cc7;    --oof-bg: #f0e8fa;
+    --freec: #2e9e5b;  --free-bg: #e4f5ea;
+
+    --call: #e0443e;
+    --meeting: #e58a24;
+    --free: #2e9e5b;
     --away: #8b5cc7;
-    --offline: #9a9aa0;
-    --now: #d93b3b;
+    --off: #9a9aa0;
+    --now: #e0443e;
+
+    --radius: 22px;
+    --gutter: 16px;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
-      --bg: #141416;
-      --card: #1e1e21;
-      --text: #f2f2f4;
-      --muted: #9b9ba3;
-      --line: #2e2e33;
-      --busy: #6d97f0;
-      --busy-bg: #22304d;
-      --tent: #a3a8b4;
-      --tent-bg: #2a2c31;
-      --oof: #b28ae6;
-      --oof-bg: #33284a;
-      --call: #f06161;
-      --meeting: #f0a24e;
-      --free: #4cc27c;
-      --away: #b28ae6;
-      --offline: #77777e;
-      --now: #f06161;
+      --bg: #121214; --card: #1c1c1f; --card-2: #232327; --text: #f2f2f4; --muted: #a0a0a8; --faint: #6c6c74; --line: #2d2d32;
+      --shadow: 0 1px 2px rgba(0,0,0,.3);
+      --busy: #6f98f2; --busy-bg: #1f2c47; --tent: #a3a8b4; --tent-bg: #2a2c31;
+      --oof: #b48ce8; --oof-bg: #31264a; --freec: #52c583; --free-bg: #18301f;
+      --call: #f2635d; --meeting: #f2a453; --free: #52c583; --away: #b48ce8; --off: #77777e; --now: #f2635d;
     }
   }
   :root[data-theme="dark"] {
-    --bg: #141416; --card: #1e1e21; --text: #f2f2f4; --muted: #9b9ba3; --line: #2e2e33;
-    --busy: #6d97f0; --busy-bg: #22304d; --tent: #a3a8b4; --tent-bg: #2a2c31;
-    --oof: #b28ae6; --oof-bg: #33284a; --call: #f06161; --meeting: #f0a24e;
-    --free: #4cc27c; --away: #b28ae6; --offline: #77777e; --now: #f06161;
+    --bg: #121214; --card: #1c1c1f; --card-2: #232327; --text: #f2f2f4; --muted: #a0a0a8; --faint: #6c6c74; --line: #2d2d32;
+    --shadow: 0 1px 2px rgba(0,0,0,.3);
+    --busy: #6f98f2; --busy-bg: #1f2c47; --tent: #a3a8b4; --tent-bg: #2a2c31;
+    --oof: #b48ce8; --oof-bg: #31264a; --freec: #52c583; --free-bg: #18301f;
+    --call: #f2635d; --meeting: #f2a453; --free: #52c583; --away: #b48ce8; --off: #77777e; --now: #f2635d;
   }
+
   * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
   html, body { margin: 0; }
   body {
     background: var(--bg);
     color: var(--text);
-    font: 16px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font: 16px/1.4 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
+    overflow-x: hidden;
   }
   main {
-    max-width: 520px;
+    width: 100%;
+    max-width: 560px;
     margin: 0 auto;
-    padding: max(16px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom));
+    padding:
+      max(var(--gutter), env(safe-area-inset-top))
+      max(var(--gutter), env(safe-area-inset-right))
+      max(28px, env(safe-area-inset-bottom))
+      max(var(--gutter), env(safe-area-inset-left));
   }
-
-  .status {
+  .card {
     background: var(--card);
-    border-radius: 20px;
-    padding: 20px;
-    display: flex;
-    gap: 16px;
-    align-items: center;
-    box-shadow: 0 1px 2px rgba(0,0,0,.05);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
   }
+  section + section, .card + .card, .block { margin-top: 14px; }
+  .label {
+    font-size: 13px; font-weight: 600; letter-spacing: .02em;
+    color: var(--muted); text-transform: uppercase;
+    margin: 22px 4px 8px;
+  }
+  .fade { animation: fade .35s ease both; }
+  @keyframes fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) { .fade, .dot.pulse::after { animation: none !important; } }
+
+  /* ---------- top bar ---------- */
+  .top {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    margin: 4px 4px 12px;
+  }
+  .top h1 { font-size: clamp(22px, 6vw, 28px); margin: 0; letter-spacing: -.02em; }
+  .pill {
+    font-size: 12px; color: var(--muted);
+    background: var(--card); border-radius: 999px; padding: 5px 10px;
+    box-shadow: var(--shadow); white-space: nowrap;
+  }
+  .pill.err { color: var(--call); }
+
+  /* ---------- hero ---------- */
+  .hero {
+    position: relative; overflow: hidden;
+    padding: clamp(18px, 5vw, 24px);
+  }
+  .hero::before {
+    content: ""; position: absolute; inset: 0;
+    background: radial-gradient(120% 90% at 0% 0%, color-mix(in srgb, var(--state) 16%, transparent), transparent 60%);
+    pointer-events: none;
+  }
+  .hero-row { position: relative; display: flex; align-items: center; gap: 16px; }
   .dot {
-    flex: none;
-    width: 52px; height: 52px;
-    border-radius: 50%;
-    background: var(--state-color, var(--offline));
-    position: relative;
+    flex: none; position: relative;
+    width: clamp(46px, 13vw, 58px); aspect-ratio: 1; border-radius: 50%;
+    background: var(--state);
+    box-shadow: 0 0 0 6px color-mix(in srgb, var(--state) 18%, transparent);
   }
   .dot.pulse::after {
-    content: "";
-    position: absolute; inset: 0;
-    border-radius: 50%;
-    background: var(--state-color);
-    animation: pulse 1.8s ease-out infinite;
+    content: ""; position: absolute; inset: 0; border-radius: 50%;
+    background: var(--state); animation: pulse 1.8s ease-out infinite;
   }
-  @keyframes pulse { from { transform: scale(1); opacity: .5; } to { transform: scale(1.7); opacity: 0; } }
-  @media (prefers-reduced-motion: reduce) { .dot.pulse::after { animation: none; } }
-  .status .who { font-size: 13px; color: var(--muted); }
-  .status .headline { font-size: 26px; font-weight: 700; letter-spacing: -.01em; line-height: 1.15; }
-  .status .sub { font-size: 15px; color: var(--muted); margin-top: 2px; }
-
-  .days {
-    display: flex;
-    gap: 8px;
-    overflow-x: auto;
-    padding: 16px 0 12px;
-    scrollbar-width: none;
+  @keyframes pulse { from { transform: scale(1); opacity: .45; } to { transform: scale(1.8); opacity: 0; } }
+  .headline { font-size: clamp(26px, 8vw, 34px); font-weight: 750; letter-spacing: -.02em; line-height: 1.05; }
+  .sub { font-size: 15px; color: var(--muted); margin-top: 4px; }
+  .progress {
+    position: relative; margin-top: 18px;
   }
-  .days::-webkit-scrollbar { display: none; }
-  .chip {
-    flex: none;
-    border: 1px solid var(--line);
-    background: var(--card);
-    color: var(--text);
-    border-radius: 999px;
-    padding: 7px 14px;
-    font: inherit;
-    font-size: 14px;
-    cursor: pointer;
-  }
-  .chip[aria-pressed="true"] { background: var(--text); color: var(--bg); border-color: var(--text); }
-  .chip .count { opacity: .6; margin-left: 4px; }
-
-  .day {
-    background: var(--card);
-    border-radius: 20px;
-    padding: 16px 16px 16px 8px;
-    box-shadow: 0 1px 2px rgba(0,0,0,.05);
-  }
-  .allday {
-    margin: 0 0 12px 8px;
-    padding: 8px 12px;
-    border-radius: 10px;
-    font-size: 14px;
-    font-weight: 600;
-  }
-  .empty { color: var(--muted); padding: 24px 8px; text-align: center; }
-
-  .timeline { position: relative; margin-left: 44px; }
-  .hour {
-    position: absolute; left: 0; right: 0;
+  .bar { height: 8px; border-radius: 99px; background: var(--line); overflow: hidden; }
+  .bar > i { display: block; height: 100%; border-radius: 99px; background: var(--state); transition: width .6s ease; }
+  .bar-legend { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); margin-top: 6px; font-variant-numeric: tabular-nums; }
+  .bar-legend b { color: var(--text); font-weight: 650; }
+  .next {
+    position: relative; margin-top: 16px; padding-top: 14px;
     border-top: 1px solid var(--line);
+    display: flex; justify-content: space-between; gap: 12px; font-size: 15px;
   }
+  .next span:first-child { color: var(--muted); }
+  .next span:last-child { font-weight: 600; font-variant-numeric: tabular-nums; }
+
+  /* ---------- free slots ---------- */
+  .slots { display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 6px; scrollbar-width: none; scroll-snap-type: x proximity; }
+  .slots::-webkit-scrollbar { display: none; }
+  .slot {
+    flex: none; scroll-snap-align: start;
+    background: var(--card); border-radius: 16px; box-shadow: var(--shadow);
+    padding: 10px 14px; min-width: 116px;
+    border-left: 4px solid var(--freec);
+  }
+  .slot .t { font-weight: 650; font-variant-numeric: tabular-nums; }
+  .slot .d { font-size: 13px; color: var(--muted); }
+  .slot.now { background: var(--free-bg); }
+  .slots-empty { color: var(--muted); font-size: 15px; margin: 0 4px; }
+
+  /* ---------- week strip ---------- */
+  .week {
+    display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px;
+    padding: 10px;
+  }
+  .wd {
+    appearance: none; border: 0; background: transparent; color: var(--text);
+    font: inherit; cursor: pointer;
+    border-radius: 14px; padding: 8px 2px 10px;
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    min-width: 0;
+  }
+  .wd .n { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; }
+  .wd .num { font-size: 18px; font-weight: 650; font-variant-numeric: tabular-nums; }
+  .wd .load { width: 70%; height: 5px; border-radius: 9px; background: var(--line); overflow: hidden; }
+  .wd .load i { display: block; height: 100%; background: var(--busy); border-radius: 9px; }
+  .wd .load.away i { background: var(--oof); }
+  .wd[aria-pressed="true"] { background: var(--text); color: var(--bg); }
+  .wd[aria-pressed="true"] .n { color: color-mix(in srgb, var(--bg) 70%, transparent); }
+  .wd[aria-pressed="true"] .load { background: color-mix(in srgb, var(--bg) 25%, transparent); }
+  .wd.today:not([aria-pressed="true"]) .num { color: var(--now); }
+
+  /* ---------- day timeline ---------- */
+  .day { padding: 16px 14px 16px 6px; }
+  .day-title { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 2px 10px; margin: 0 4px 12px 10px; }
+  .day-title h2 { font-size: 18px; margin: 0; }
+  .day-title span { font-size: 13px; color: var(--muted); }
+  .allday { margin: 0 4px 12px 10px; padding: 10px 12px; border-radius: 12px; font-weight: 600; font-size: 15px; }
+  .empty { color: var(--muted); padding: 28px 8px; text-align: center; }
+  .timeline { position: relative; margin-left: 48px; }
+  .hour { position: absolute; left: 0; right: 0; border-top: 1px solid var(--line); }
   .hour span {
-    position: absolute; left: -44px; top: -9px;
-    width: 38px; text-align: right;
-    font-size: 12px; color: var(--muted);
-    font-variant-numeric: tabular-nums;
+    position: absolute; left: -48px; top: -9px; width: 40px; text-align: right;
+    font-size: 12px; color: var(--faint); font-variant-numeric: tabular-nums;
   }
-  .event {
-    position: absolute;
-    border-radius: 8px;
-    padding: 3px 8px;
-    font-size: 13px;
-    font-weight: 600;
-    overflow: hidden;
-    border-left: 4px solid;
-    font-variant-numeric: tabular-nums;
+  .ev {
+    position: absolute; border-radius: 10px; padding: 4px 9px;
+    font-size: 13px; line-height: 1.3; overflow: hidden;
+    border-left: 4px solid; font-variant-numeric: tabular-nums;
   }
-  .event.b { background: var(--busy-bg); border-color: var(--busy); color: var(--text); }
-  .event.t {
-    background: repeating-linear-gradient(135deg, var(--tent-bg) 0 8px, transparent 8px 14px);
-    border-color: var(--tent); color: var(--text);
+  .ev b { font-weight: 650; }
+  .ev small { color: var(--muted); margin-left: 6px; }
+  .ev.b { background: var(--busy-bg); border-color: var(--busy); }
+  .ev.t { background: repeating-linear-gradient(135deg, var(--tent-bg) 0 8px, var(--card) 8px 14px); border-color: var(--tent); }
+  .ev.o { background: var(--oof-bg); border-color: var(--oof); }
+  .ev.past { opacity: .45; }
+  .ev.current { box-shadow: 0 0 0 2px var(--state, var(--busy)); }
+  .ev .fill { position: absolute; left: 0; top: 0; bottom: 0; background: color-mix(in srgb, var(--busy) 18%, transparent); pointer-events: none; }
+  .ev > :not(.fill) { position: relative; }
+  .gap {
+    position: absolute; border-radius: 10px;
+    border: 1.5px dashed color-mix(in srgb, var(--freec) 55%, transparent);
+    background: color-mix(in srgb, var(--free-bg) 60%, transparent);
+    color: var(--freec); font-size: 12px; font-weight: 600;
+    display: flex; align-items: center; justify-content: center; text-align: center;
+    padding: 0 6px;
   }
-  .event.o { background: var(--oof-bg); border-color: var(--oof); color: var(--text); }
-  .event.past { opacity: .45; }
-  .event.current { box-shadow: 0 0 0 2px var(--busy); }
-  .event small { display: block; font-weight: 400; color: var(--muted); }
-  .now {
-    position: absolute; left: -6px; right: 0;
-    border-top: 2px solid var(--now);
-    z-index: 2;
-  }
-  .now::before {
-    content: "";
-    position: absolute; left: -4px; top: -6px;
-    width: 10px; height: 10px; border-radius: 50%;
-    background: var(--now);
-  }
-
-  .legend {
-    display: flex; flex-wrap: wrap; gap: 14px;
-    font-size: 13px; color: var(--muted);
-    margin: 14px 4px 0;
-  }
+  .gap.past { opacity: .4; }
+  .now-line { position: absolute; left: -6px; right: 0; border-top: 2px solid var(--now); z-index: 3; }
+  .now-line::before { content: ""; position: absolute; left: -5px; top: -6px; width: 10px; height: 10px; border-radius: 50%; background: var(--now); }
+  .legend { display: flex; flex-wrap: wrap; gap: 8px 14px; font-size: 13px; color: var(--muted); margin: 14px 6px 0; }
   .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
-  footer { font-size: 12px; color: var(--muted); margin: 14px 4px 0; }
+  footer { font-size: 12px; color: var(--faint); margin: 16px 6px 0; text-align: center; }
 
-  .setup {
-    background: var(--card);
-    border-radius: 20px;
-    padding: 20px;
-  }
+  /* ---------- setup ---------- */
+  .setup { padding: 22px; }
   .setup h1 { font-size: 22px; margin: 0 0 8px; }
   .setup p { color: var(--muted); margin: 0 0 16px; }
   .setup input {
-    width: 100%;
-    font: inherit;
-    padding: 12px;
-    border-radius: 10px;
-    border: 1px solid var(--line);
-    background: var(--bg);
-    color: var(--text);
+    width: 100%; font: inherit; font-size: 16px; padding: 13px; border-radius: 12px;
+    border: 1px solid var(--line); background: var(--bg); color: var(--text);
   }
   .setup button {
-    margin-top: 12px;
-    width: 100%;
-    font: inherit; font-weight: 600;
-    padding: 12px;
-    border-radius: 10px;
-    border: 0;
-    background: var(--text);
-    color: var(--bg);
-    cursor: pointer;
+    margin-top: 12px; width: 100%; font: inherit; font-weight: 650; padding: 13px; border-radius: 12px;
+    border: 0; background: var(--text); color: var(--bg); cursor: pointer;
+  }
+
+  /* Very small phones (e.g. iPhone SE 1st gen, 320 px) */
+  @media (max-width: 350px) {
+    :root { --gutter: 12px; }
+    .week { gap: 2px; padding: 8px 6px; }
+    .wd .num { font-size: 16px; }
+    .timeline { margin-left: 42px; }
+    .hour span { left: -42px; width: 36px; }
+  }
+  /* Tablets and landscape: a bit more room */
+  @media (min-width: 700px) {
+    main { max-width: 620px; }
   }
 </style>
 </head>
@@ -222,7 +255,10 @@
   const SERVER = 'https://ntfy.sh';
   const POLL_MS = 20000;
   const OFFLINE_AFTER_MIN = 45;
-  const HOUR_PX = 56;
+  const HOUR_PX = 60;
+  const MIN_GAP = 15;           // free gaps shorter than this are not shown
+  const WORK_START = 8 * 60;    // default visible window and basis for "how full is the day"
+  const WORK_END = 18 * 60;
   const STORAGE_KEY = 'status-topic';
 
   const app = document.getElementById('app');
@@ -232,26 +268,85 @@
   let selectedDay = null;
   let fetchError = false;
   let lastFetch = null;
+  let animate = true;   // entry animation only on first render and day changes, not on periodic refreshes
 
   // ---------- helpers ----------
   const pad = n => String(n).padStart(2, '0');
   const dateKey = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
   const toMin = hhmm => { const [h, m] = hhmm.split(':').map(Number); return h * 60 + m; };
+  const fmt = min => `${pad(Math.floor(min / 60))}:${pad(min % 60)}`;
   const nowMin = () => { const d = new Date(); return d.getHours() * 60 + d.getMinutes(); };
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-  const range = t => t.replace('-', '–');
+  const dash = t => t.replace('-', '–');
+
+  function duration(min) {
+    if (min < 60) return `${min} Min`;
+    const h = Math.floor(min / 60), m = min % 60;
+    return m ? `${h} Std ${m} Min` : `${h} Std`;
+  }
 
   function storageGet() { try { return localStorage.getItem(STORAGE_KEY) || ''; } catch { return ''; } }
   function storageSet(v) { try { localStorage.setItem(STORAGE_KEY, v); } catch { /* storage unavailable */ } }
 
-  function dayLabel(key) {
+  function parseKey(key) { const [y, m, d] = key.split('-').map(Number); return new Date(y, m - 1, d); }
+
+  function dayTitle(key) {
     const today = dateKey(new Date());
     const t = new Date(); t.setDate(t.getDate() + 1);
-    if (key === today) return 'Heute';
-    if (key === dateKey(t)) return 'Morgen';
-    const [y, m, d] = key.split('-').map(Number);
-    const date = new Date(y, m - 1, d);
-    return date.toLocaleDateString('de-DE', { weekday: 'short', day: 'numeric', month: 'numeric' });
+    const long = parseKey(key).toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' });
+    if (key === today) return ['Heute', long];
+    if (key === dateKey(t)) return ['Morgen', long];
+    return [long.split(',')[0], long.split(',').slice(1).join(',').trim()];
+  }
+
+  /** Merged busy intervals (any kind) in minutes, sorted. */
+  function mergedIntervals(events) {
+    const list = events.map(e => [toMin(e.s), toMin(e.e)]).filter(([a, b]) => b > a).sort((x, y) => x[0] - y[0]);
+    const out = [];
+    for (const [a, b] of list) {
+      const last = out[out.length - 1];
+      if (last && a <= last[1]) last[1] = Math.max(last[1], b);
+      else out.push([a, b]);
+    }
+    return out;
+  }
+
+  /** Visible window of a day: working hours, widened to include all events (and now, for today). */
+  function dayWindow(day, isToday) {
+    let start = WORK_START, end = WORK_END;
+    for (const e of day.e) { start = Math.min(start, toMin(e.s)); end = Math.max(end, toMin(e.e)); }
+    if (isToday) { const n = nowMin(); start = Math.min(start, n); end = Math.max(end, n + 1); }
+    start = Math.max(0, Math.floor(start / 60) * 60);
+    end = Math.min(24 * 60, Math.ceil(end / 60) * 60);
+    return [start, end];
+  }
+
+  /** Free gaps within the working window (for today: only from now on). */
+  function freeGaps(day, isToday) {
+    if ((day.a || '').includes('o')) return [];
+    let from = WORK_START, to = WORK_END;
+    for (const e of day.e) { from = Math.min(from, toMin(e.s)); to = Math.max(to, toMin(e.e)); }
+    if (isToday) from = Math.max(from, nowMin());
+    const gaps = [];
+    let cursor = from;
+    for (const [a, b] of mergedIntervals(day.e)) {
+      if (b <= cursor) continue;
+      if (a > cursor) gaps.push([cursor, Math.min(a, to)]);
+      cursor = Math.max(cursor, b);
+      if (cursor >= to) break;
+    }
+    if (cursor < to) gaps.push([cursor, to]);
+    return gaps.filter(([a, b]) => b - a >= MIN_GAP);
+  }
+
+  /** Share of the working window that is occupied (0..1). */
+  function dayLoad(day) {
+    if ((day.a || '').includes('o')) return 1;
+    let busy = 0;
+    for (const [a, b] of mergedIntervals(day.e)) {
+      busy += Math.max(0, Math.min(b, WORK_END) - Math.max(a, WORK_START));
+    }
+    return Math.min(1, busy / (WORK_END - WORK_START));
   }
 
   // ---------- data ----------
@@ -281,7 +376,7 @@
   }
 
   async function poll() {
-    if (!topic || topic === 'demo') return;
+    if (!topic || topic.startsWith('demo')) return;
     try {
       const since = lastId || '12h';
       const res = await fetch(`${SERVER}/${encodeURIComponent(topic)}-data/json?poll=1&since=${encodeURIComponent(since)}`, { cache: 'no-store' });
@@ -302,60 +397,163 @@
     render();
   }
 
-  function demoSnapshot() {
-    const today = new Date();
+  /** Demo data around the current time: #demo (call), #demo-free, #demo-meeting. */
+  function demoSnapshot(kind) {
+    const n = nowMin();
+    const r5 = m => Math.max(0, Math.min(24 * 60 - 5, Math.round(m / 5) * 5));
     const days = [];
     for (let i = 0; i < 7; i++) {
-      const d = new Date(today); d.setDate(d.getDate() + i);
+      const d = new Date(); d.setDate(d.getDate() + i);
       const wd = d.getDay();
-      const e = (wd === 0 || wd === 6) ? [] : [
-        { s: '09:00', e: '09:15', k: 'b' },
-        { s: '10:00', e: '11:00', k: 'b' },
-        { s: '11:00', e: '11:30', k: 't' },
-        { s: '13:30', e: '14:30', k: 'b' },
-        { s: '16:00', e: '17:00', k: i === 2 ? 'o' : 'b' },
-      ];
+      let e = [];
+      if (wd !== 0 && wd !== 6) {
+        e = [
+          { s: '09:00', e: '09:15', k: 'b' }, { s: '10:00', e: '11:00', k: 'b' }, { s: '11:00', e: '11:30', k: 't' },
+          { s: '13:30', e: '14:30', k: 'b' }, { s: '16:00', e: '17:00', k: i === 3 ? 'o' : 'b' },
+        ];
+        if (i === 2) e.push({ s: '14:30', e: '15:30', k: 'b' });
+      }
+      if (i === 0) {
+        e = kind === 'free'
+          ? [{ s: fmt(r5(n - 120)), e: fmt(r5(n - 90)), k: 'b' }, { s: fmt(r5(n + 70)), e: fmt(r5(n + 100)), k: 'b' }, { s: fmt(r5(n + 160)), e: fmt(r5(n + 220)), k: 't' }]
+          : [{ s: fmt(r5(n - 150)), e: fmt(r5(n - 120)), k: 'b' }, { s: fmt(r5(n - 25)), e: fmt(r5(n + 20)), k: 'b' }, { s: fmt(r5(n + 90)), e: fmt(r5(n + 120)), k: 'b' }];
+      }
       days.push({ d: dateKey(d), a: '', e });
     }
-    const n = new Date();
+    const today = days[0].e;
+    const status = kind === 'free' ? 'free' : kind === 'meeting' ? 'meeting' : 'call';
     return {
-      v: 1, name: 'Patti', status: 'call',
-      since: `${pad(n.getHours())}:${pad(Math.max(0, n.getMinutes() - 7))}`,
-      until: '', next: '', days, ts: n.toISOString(),
+      v: 1, name: 'Patti', status,
+      since: kind === 'free' ? today[0].e : fmt(r5(n - 22)),
+      until: status === 'free' ? '' : today[1].e,
+      next: status === 'free' ? `${today[1].s}-${today[1].e}` : `${today[2].s}-${today[2].e}`,
+      days, ts: new Date().toISOString(),
     };
   }
 
-  // ---------- rendering ----------
-  function statusView() {
+  // ---------- views ----------
+  function heroView(today) {
     if (!snapshot) {
-      return { color: 'var(--offline)', headline: 'Noch keine Daten', sub: 'Sobald der Rechner läuft, erscheint hier der Status.', pulse: false, who: '' };
+      return { state: 'var(--off)', headline: 'Noch keine Daten', sub: 'Sobald der Rechner läuft, erscheint hier der Status.' };
     }
     const s = snapshot;
     const ageMin = (Date.now() - Date.parse(s.ts)) / 60000;
-    const who = s.name || '';
     if (!(ageMin < OFFLINE_AFTER_MIN)) {
       const t = new Date(Date.parse(s.ts));
       const when = dateKey(t) === dateKey(new Date())
         ? `${pad(t.getHours())}:${pad(t.getMinutes())}`
         : t.toLocaleDateString('de-DE', { weekday: 'short', day: 'numeric', month: 'numeric' }) + `, ${pad(t.getHours())}:${pad(t.getMinutes())}`;
-      return { color: 'var(--offline)', headline: 'Rechner aus', sub: `Letzte Meldung ${when} · Kalender siehe unten`, pulse: false, who };
+      return { state: 'var(--off)', headline: 'Rechner aus', sub: `Letzte Meldung ${when}` };
     }
+
+    const n = nowMin();
+    const view = { state: 'var(--off)', headline: '', sub: '', pulse: false, progress: null, next: null };
+    const nextText = s.next ? dash(s.next) : '';
+
+    // Start of the busy block that contains "now", for the progress bar.
+    let blockStart = null;
+    if (today && s.until) {
+      for (const [a, b] of mergedIntervals(today.e)) if (a <= n && b > n) blockStart = a;
+    }
+    const withProgress = () => {
+      if (!s.until) return;
+      const end = toMin(s.until);
+      const start = blockStart ?? (s.since ? toMin(s.since) : n);
+      const total = Math.max(1, end - start);
+      const pct = Math.max(0, Math.min(100, ((n - start) / total) * 100));
+      view.progress = { pct, left: `${fmt(start)}`, right: `bis ${s.until}`, remain: Math.max(0, end - n) };
+    };
+
     switch (s.status) {
-      case 'call':
-        return { color: 'var(--call)', headline: 'Im Call', sub: `seit ${s.since}` + (s.until ? ` · Termin bis ${s.until}` : ''), pulse: true, who };
+      case 'call': {
+        view.state = 'var(--call)'; view.headline = 'Im Call'; view.pulse = true;
+        const since = s.since ? Math.max(0, n - toMin(s.since)) : null;
+        view.sub = since !== null ? `seit ${s.since} · ${duration(since)}` : '';
+        withProgress();
+        if (nextText) view.next = ['Danach', nextText];
+        break;
+      }
       case 'meeting':
-        return { color: 'var(--meeting)', headline: 'Im Termin', sub: `laut Kalender bis ${s.until}`, pulse: false, who };
-      case 'paused':
-        return { color: 'var(--offline)', headline: 'Pausiert', sub: 'Status und Kalender werden gerade nicht geteilt', pulse: false, who };
+        view.state = 'var(--meeting)'; view.headline = 'Im Termin';
+        view.sub = `laut Kalender bis ${s.until}`;
+        withProgress();
+        if (nextText) view.next = ['Danach', nextText];
+        break;
       case 'away':
-        return { color: 'var(--away)', headline: 'Abwesend', sub: 'laut Kalender', pulse: false, who };
-      default:
-        return { color: 'var(--free)', headline: 'Frei', sub: s.next ? `Nächster Termin ${range(s.next)}` : 'Heute keine weiteren Termine', pulse: false, who };
+        view.state = 'var(--away)'; view.headline = 'Abwesend';
+        view.sub = s.until ? `bis ${s.until}` : 'laut Kalender';
+        break;
+      case 'paused':
+        view.state = 'var(--off)'; view.headline = 'Pausiert';
+        view.sub = 'Status und Kalender werden gerade nicht geteilt';
+        break;
+      default: {
+        view.state = 'var(--free)'; view.headline = 'Frei';
+        if (s.next) {
+          const start = toMin(s.next.split('-')[0]);
+          const remain = start - n;
+          view.sub = remain > 0 ? `noch ${duration(remain)} · bis ${s.next.split('-')[0]}` : `bis ${s.next.split('-')[0]}`;
+          view.next = ['Nächster Termin', nextText];
+        } else {
+          view.sub = 'Heute keine weiteren Termine';
+        }
+      }
     }
+    return view;
   }
 
+  function heroHtml(v) {
+    let html = `<section class="card hero${animate ? ' fade' : ''}" style="--state:${v.state}" aria-live="polite">
+      <div class="hero-row">
+        <div class="dot${v.pulse ? ' pulse' : ''}"></div>
+        <div>
+          <div class="headline">${esc(v.headline)}</div>
+          ${v.sub ? `<div class="sub">${esc(v.sub)}</div>` : ''}
+        </div>
+      </div>`;
+    if (v.progress) {
+      html += `<div class="progress">
+          <div class="bar"><i style="width:${v.progress.pct.toFixed(1)}%"></i></div>
+          <div class="bar-legend"><span>${esc(v.progress.left)}</span><span><b>noch ${esc(duration(v.progress.remain))}</b> · ${esc(v.progress.right)}</span></div>
+        </div>`;
+    }
+    if (v.next) html += `<div class="next"><span>${esc(v.next[0])}</span><span>${esc(v.next[1])}</span></div>`;
+    return html + '</section>';
+  }
+
+  function slotsHtml(day, isToday) {
+    const gaps = freeGaps(day, isToday);
+    const title = isToday ? 'Gut erreichbar heute' : 'Freie Zeiten';
+    let html = `<div class="label">${title}</div>`;
+    if ((day.a || '').includes('o')) return html + `<p class="slots-empty">Ganztägig abwesend.</p>`;
+    if (!gaps.length) return html + `<p class="slots-empty">${isToday ? 'Heute keine freien Zeiten mehr.' : 'Keine freien Zeiten.'}</p>`;
+    const n = nowMin();
+    html += '<div class="slots">';
+    for (const [a, b] of gaps) {
+      const isNow = isToday && a <= n;
+      html += `<div class="slot${isNow ? ' now' : ''}"><div class="t">${isNow ? 'jetzt' : fmt(a)}–${fmt(b)}</div><div class="d">${duration(b - Math.max(a, isToday ? n : a))}</div></div>`;
+    }
+    return html + '</div>';
+  }
+
+  function weekHtml(days) {
+    const todayKey = dateKey(new Date());
+    let html = '<div class="label">Woche</div><nav class="card week" aria-label="Tag wählen">';
+    for (const d of days) {
+      const date = parseKey(d.d);
+      const name = date.toLocaleDateString('de-DE', { weekday: 'short' }).replace('.', '');
+      const load = dayLoad(d);
+      const away = (d.a || '').includes('o');
+      html += `<button class="wd${d.d === todayKey ? ' today' : ''}" data-day="${d.d}" aria-pressed="${d.d === selectedDay}" aria-label="${esc(date.toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' }))}">
+        <span class="n">${esc(name)}</span><span class="num">${date.getDate()}</span>
+        <span class="load${away ? ' away' : ''}"><i style="width:${Math.round(load * 100)}%"></i></span>
+      </button>`;
+    }
+    return html + '</nav>';
+  }
+
+  /** Greedy column layout for overlapping events. */
   function layoutColumns(events) {
-    // Greedy column assignment for overlapping events.
     const sorted = events.map(e => ({ ...e, a: toMin(e.s), b: toMin(e.e) })).sort((x, y) => x.a - y.a || y.b - x.b);
     const groups = [];
     let group = [], groupEnd = -1;
@@ -378,136 +576,132 @@
     return sorted;
   }
 
-  function dayView(day) {
-    const isToday = day.d === dateKey(new Date());
-    let html = '';
-    const allDay = { o: 'Ganztägig abwesend', b: 'Ganztägig beschäftigt', t: 'Ganztägig mit Vorbehalt' };
+  function dayHtml(day, isToday, stateColor) {
+    const [title, subtitle] = dayTitle(day.d);
+    const busyCount = day.e.filter(e => e.k !== 't').length;
+    let html = `<section class="card day${animate ? ' fade' : ''}"><div class="day-title"><h2>${esc(title)}</h2><span>${esc(subtitle)}${day.e.length ? ` · ${busyCount} Termin${busyCount === 1 ? '' : 'e'}` : ''}</span></div>`;
+
+    const allDay = { o: ['Ganztägig abwesend', 'var(--oof-bg)'], b: ['Ganztägig beschäftigt', 'var(--busy-bg)'], t: ['Ganztägig mit Vorbehalt', 'var(--tent-bg)'] };
     for (const k of (day.a || '').split('')) {
-      if (!allDay[k]) continue;
-      const bg = k === 'o' ? 'var(--oof-bg)' : k === 't' ? 'var(--tent-bg)' : 'var(--busy-bg)';
-      html += `<div class="allday" style="background:${bg}">${allDay[k]}</div>`;
+      if (allDay[k]) html += `<div class="allday" style="background:${allDay[k][1]}">${allDay[k][0]}</div>`;
     }
     if (!day.e.length) {
-      return html + `<div class="empty">Keine Termine</div>`;
+      return html + `<div class="empty">${(day.a || '').includes('o') ? '' : 'Keine Termine – den ganzen Tag frei'}</div></section>`;
     }
 
-    const events = layoutColumns(day.e);
-    let startH = 8, endH = 18;
-    for (const ev of events) {
-      startH = Math.min(startH, Math.floor(ev.a / 60));
-      endH = Math.max(endH, Math.ceil(ev.b / 60));
-    }
-    if (isToday) {
-      const n = nowMin();
-      startH = Math.min(startH, Math.floor(n / 60));
-      endH = Math.max(endH, Math.ceil((n + 1) / 60));
-    }
-    startH = Math.max(0, startH); endH = Math.min(24, endH);
-    const y = min => (min - startH * 60) / 60 * HOUR_PX;
-
-    let t = `<div class="timeline" style="height:${(endH - startH) * HOUR_PX}px">`;
-    for (let h = startH; h <= endH; h++) {
-      t += `<div class="hour" style="top:${y(h * 60)}px"><span>${pad(h)}:00</span></div>`;
-    }
+    const [startMin, endMin] = dayWindow(day, isToday);
+    const y = min => (min - startMin) / 60 * HOUR_PX;
     const n = nowMin();
+    let t = `<div class="timeline" style="height:${y(endMin)}px">`;
+    for (let m = startMin; m <= endMin; m += 60) t += `<div class="hour" style="top:${y(m)}px"><span>${fmt(m)}</span></div>`;
+
+    // Free gaps (whole day, not only future) as dashed areas behind the events.
+    if (!(day.a || '').includes('o')) {
+      // Today, the part of a gap before "now" is shown dimmed.
+      const parts = [];
+      for (const [a, b] of freeGaps(day, false)) {
+        if (isToday && a < n && b > n) { parts.push([a, n, true]); parts.push([n, b, false]); }
+        else parts.push([a, b, isToday && b <= n]);
+      }
+      for (const [a, b, past] of parts) {
+        const h = y(b) - y(a) - 4;
+        if (h < 14) continue;
+        const label = h >= 22 && !past ? `frei · ${duration(b - a)}` : '';
+        t += `<div class="gap${past ? ' past' : ''}" style="top:${y(a) + 2}px;height:${h}px;left:4px;right:2px">${label}</div>`;
+      }
+    }
+
     const kindText = { b: '', t: 'mit Vorbehalt', o: 'abwesend' };
-    for (const ev of events) {
+    for (const ev of layoutColumns(day.e)) {
       const top = y(ev.a) + 1;
-      const height = Math.max(20, y(ev.b) - y(ev.a) - 2);
+      const height = Math.max(22, y(ev.b) - y(ev.a) - 2);
       const width = 100 / ev.cols;
-      const cls = ['event', ev.k];
+      const cls = ['ev', ev.k];
+      let fill = '';
       if (isToday && ev.b <= n) cls.push('past');
-      if (isToday && ev.a <= n && ev.b > n) cls.push('current');
-      const showSmall = kindText[ev.k] && height >= 38;
-      t += `<div class="${cls.join(' ')}" style="top:${top}px;height:${height}px;left:calc(${ev.col * width}% + 4px);width:calc(${width}% - 6px)">`
-        + `${ev.s}–${ev.e}${showSmall ? `<small>${kindText[ev.k]}</small>` : ''}</div>`;
+      if (isToday && ev.a <= n && ev.b > n) {
+        cls.push('current');
+        fill = `<span class="fill" style="width:${(((n - ev.a) / (ev.b - ev.a)) * 100).toFixed(1)}%"></span>`;
+      }
+      const dur = ev.b - ev.a;
+      const extra = kindText[ev.k] || (height >= 36 || ev.cols === 1 ? duration(dur) : '');
+      t += `<div class="${cls.join(' ')}" style="--state:${stateColor};top:${top}px;height:${height}px;left:calc(${ev.col * width}% + 4px);width:calc(${width}% - 6px)">`
+        + `${fill}<b>${ev.s}–${ev.e}</b>${extra ? `<small>${extra}</small>` : ''}</div>`;
     }
-    if (isToday && n >= startH * 60 && n <= endH * 60) {
-      t += `<div class="now" style="top:${y(n)}px"></div>`;
-    }
+    if (isToday && n >= startMin && n <= endMin) t += `<div class="now-line" style="top:${y(n)}px"></div>`;
     t += '</div>';
-    return html + t;
+    return html + t + `</section>`;
   }
 
   function renderSetup() {
     app.innerHTML = `
-      <div class="setup">
+      <div class="card setup fade">
         <h1>Einrichten</h1>
         <p>Gib den Kanalnamen ein, den du bekommen hast (z.&nbsp;B. <code>status-abc123…</code>).</p>
         <form id="f">
-          <input id="t" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="status-…" required>
+          <input id="t" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="status-…" required>
           <button type="submit">Speichern</button>
         </form>
       </div>`;
     document.getElementById('f').addEventListener('submit', e => {
       e.preventDefault();
       const v = document.getElementById('t').value.trim();
-      if (!v) return;
-      location.hash = v;
+      if (v) location.hash = v;
     });
   }
 
   function render() {
     if (!topic) { renderSetup(); return; }
-    const st = statusView();
     const todayKey = dateKey(new Date());
     const days = (snapshot?.days || []).filter(d => d.d >= todayKey);
+    const paused = snapshot?.status === 'paused';
+    const today = days.find(d => d.d === todayKey) || null;
     if (!days.find(d => d.d === selectedDay)) selectedDay = days[0]?.d || null;
     const day = days.find(d => d.d === selectedDay);
+    const hero = heroView(today);
 
-    let html = `
-      <section class="status" style="--state-color:${st.color}" aria-live="polite">
-        <div class="dot${st.pulse ? ' pulse' : ''}"></div>
-        <div>
-          ${st.who ? `<div class="who">${esc(st.who)}</div>` : ''}
-          <div class="headline">${esc(st.headline)}</div>
-          <div class="sub">${esc(st.sub)}</div>
-        </div>
-      </section>`;
+    const updated = lastFetch ? `${pad(lastFetch.getHours())}:${pad(lastFetch.getMinutes())}` : '–';
+    const name = snapshot?.name || '';
+    let html = `<div class="top"><h1>${esc(name || 'Status')}</h1><span class="pill${fetchError ? ' err' : ''}">${fetchError ? 'Keine Verbindung' : `Stand ${updated}`}</span></div>`;
+    html += heroHtml(hero);
 
-    if (days.length) {
-      html += `<nav class="days">` + days.map(d => {
-        const count = d.e.length ? `<span class="count">${d.e.length}</span>` : '';
-        return `<button class="chip" data-day="${d.d}" aria-pressed="${d.d === selectedDay}">${dayLabel(d.d)}${count}</button>`;
-      }).join('') + `</nav>`;
-      html += `<section class="day">${dayView(day)}</section>`;
+    if (days.length && !paused && day) {
+      html += slotsHtml(day, day.d === todayKey);
+      html += weekHtml(days);
+      html += dayHtml(day, day.d === todayKey, hero.state);
       html += `<div class="legend">
           <span><i style="background:var(--busy)"></i>Beschäftigt</span>
           <span><i style="background:var(--tent)"></i>Mit Vorbehalt</span>
           <span><i style="background:var(--oof)"></i>Abwesend</span>
+          <span><i style="background:var(--free-bg);outline:1.5px dashed var(--freec);outline-offset:-1.5px"></i>Frei</span>
         </div>`;
     }
+    html += `<footer>Aktualisiert sich automatisch</footer>`;
 
-    const updated = lastFetch ? `${pad(lastFetch.getHours())}:${pad(lastFetch.getMinutes())}` : '–';
-    html += `<footer>${fetchError ? 'Verbindung fehlgeschlagen, neuer Versuch läuft … · ' : ''}Aktualisiert ${updated} · lädt automatisch neu</footer>`;
-
-    const scrollX = app.querySelector('.days')?.scrollLeft || 0;
     app.innerHTML = html;
-    const nav = app.querySelector('.days');
-    if (nav) {
-      nav.scrollLeft = scrollX;
-      nav.addEventListener('click', e => {
-        const b = e.target.closest('.chip');
-        if (!b) return;
-        selectedDay = b.dataset.day;
-        render();
-      });
-    }
+    animate = false;
+    app.querySelector('.week')?.addEventListener('click', e => {
+      const b = e.target.closest('.wd');
+      if (!b) return;
+      selectedDay = b.dataset.day;
+      animate = true;
+      render();
+    });
   }
 
   // ---------- startup ----------
   function init() {
     const fromHash = decodeURIComponent(location.hash.slice(1)).trim();
     const next = fromHash || storageGet();
-    if (next !== topic) { topic = next; snapshot = null; lastId = null; }
-    if (fromHash && fromHash !== 'demo') storageSet(fromHash);
-    if (topic === 'demo') { snapshot = sanitize(demoSnapshot()); lastFetch = new Date(); }
+    if (next !== topic) { topic = next; snapshot = null; lastId = null; animate = true; }
+    if (fromHash && !fromHash.startsWith('demo')) storageSet(fromHash);
+    if (topic.startsWith('demo')) { snapshot = sanitize(demoSnapshot(topic.split('-')[1] || 'call')); lastFetch = new Date(); }
     render();
     poll();
   }
 
   window.addEventListener('hashchange', init);
-  document.addEventListener('visibilitychange', () => { if (!document.hidden) poll(); });
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) { poll(); render(); } });
   setInterval(poll, POLL_MS);
   setInterval(render, 30000);
   init();
