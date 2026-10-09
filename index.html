@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="de">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src https://ntfy.sh; img-src data:; form-action 'self'; base-uri 'none'">
@@ -8,50 +8,53 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Status">
-<meta name="theme-color" content="#f5f4f1" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#121214" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#121214">
+<script>
+  // Applies the stored appearance before the first paint, so the page never flashes in the wrong mode.
+  // Mode "auto" follows the system; without a system preference the page is dark.
+  (function () {
+    var mode = 'auto', accent = 'blue';
+    try { mode = localStorage.getItem('status-mode') || 'auto'; accent = localStorage.getItem('status-accent') || 'blue'; } catch (e) {}
+    var light = mode === 'light' || (mode === 'auto' && window.matchMedia && matchMedia('(prefers-color-scheme: light)').matches);
+    var root = document.documentElement;
+    root.setAttribute('data-theme', light ? 'light' : 'dark');
+    root.setAttribute('data-accent', accent);
+  })();
+</script>
 <title>Status Indicator</title>
 <style>
+  /* Dark is the base, so it also applies when the system states no preference. */
   :root {
-    --bg: #f5f4f1;
-    --card: #ffffff;
-    --card-2: #faf9f7;
-    --text: #1c1c1e;
-    --muted: #6e6e73;
-    --faint: #a1a1a6;
-    --line: #e6e4df;
-    --shadow: 0 1px 2px rgba(0,0,0,.04), 0 6px 20px rgba(0,0,0,.05);
-
-    --busy: #3a6fd8;   --busy-bg: #e5edfc;
-    --tent: #8a8f9c;   --tent-bg: #eff0f3;
-    --oof: #8b5cc7;    --oof-bg: #f0e8fa;
-    --freec: #2e9e5b;  --free-bg: #e4f5ea;
-
-    --call: #e0443e;
-    --meeting: #e58a24;
-    --free: #2e9e5b;
-    --away: #8b5cc7;
-    --off: #9a9aa0;
-    --now: #e0443e;
-
-    --radius: 22px;
-    --gutter: 16px;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) {
-      --bg: #121214; --card: #1c1c1f; --card-2: #232327; --text: #f2f2f4; --muted: #a0a0a8; --faint: #6c6c74; --line: #2d2d32;
-      --shadow: 0 1px 2px rgba(0,0,0,.3);
-      --busy: #6f98f2; --busy-bg: #1f2c47; --tent: #a3a8b4; --tent-bg: #2a2c31;
-      --oof: #b48ce8; --oof-bg: #31264a; --freec: #52c583; --free-bg: #18301f;
-      --call: #f2635d; --meeting: #f2a453; --free: #52c583; --away: #b48ce8; --off: #77777e; --now: #f2635d;
-    }
-  }
-  :root[data-theme="dark"] {
     --bg: #121214; --card: #1c1c1f; --card-2: #232327; --text: #f2f2f4; --muted: #a0a0a8; --faint: #6c6c74; --line: #2d2d32;
     --shadow: 0 1px 2px rgba(0,0,0,.3);
-    --busy: #6f98f2; --busy-bg: #1f2c47; --tent: #a3a8b4; --tent-bg: #2a2c31;
-    --oof: #b48ce8; --oof-bg: #31264a; --freec: #52c583; --free-bg: #18301f;
+    --busy: #6f98f2; --tent: #a3a8b4; --tent-bg: #2a2c31;
+    --oof: #b48ce8; --freec: #52c583;
     --call: #f2635d; --meeting: #f2a453; --free: #52c583; --away: #b48ce8; --off: #77777e; --now: #f2635d;
+    --mix: 22%;
+    --radius: 22px;
+    --gutter: 16px;
+    color-scheme: dark;
+  }
+  :root[data-theme="light"] {
+    --bg: #f5f4f1; --card: #ffffff; --card-2: #faf9f7; --text: #1c1c1e; --muted: #6e6e73; --faint: #a1a1a6; --line: #e6e4df;
+    --shadow: 0 1px 2px rgba(0,0,0,.04), 0 6px 20px rgba(0,0,0,.05);
+    --busy: #3a6fd8; --tent: #8a8f9c; --tent-bg: #eff0f3;
+    --oof: #8b5cc7; --freec: #2e9e5b;
+    --call: #e0443e; --meeting: #e58a24; --free: #2e9e5b; --away: #8b5cc7; --off: #9a9aa0; --now: #e0443e;
+    --mix: 14%;
+    color-scheme: light;
+  }
+  /* Color themes: only the accent for busy entries changes. */
+  :root[data-accent="teal"]     { --busy: #3cc4c6; }
+  :root[data-accent="rose"]     { --busy: #e57aa6; }
+  :root[data-accent="amber"]    { --busy: #e8b04a; }
+  :root[data-theme="light"][data-accent="teal"]     { --busy: #0f8b8d; }
+  :root[data-theme="light"][data-accent="rose"]     { --busy: #c2477a; }
+  :root[data-theme="light"][data-accent="amber"]    { --busy: #b7791f; }
+  :root {
+    --busy-bg: color-mix(in srgb, var(--busy) var(--mix), var(--card));
+    --oof-bg: color-mix(in srgb, var(--oof) var(--mix), var(--card));
+    --free-bg: color-mix(in srgb, var(--freec) var(--mix), var(--card));
   }
 
   * { box-sizing: border-box; }
@@ -102,6 +105,32 @@
     box-shadow: var(--shadow); white-space: nowrap;
   }
   .pill.err { color: var(--call); }
+  .top-right { display: flex; align-items: center; gap: 8px; }
+  .icon-btn {
+    appearance: none; border: 0; cursor: pointer;
+    width: 34px; height: 34px; border-radius: 50%;
+    background: var(--card); color: var(--text); box-shadow: var(--shadow);
+    display: grid; place-items: center; padding: 0;
+  }
+  .icon-btn svg { width: 18px; height: 18px; }
+  .prefs { padding: 16px; margin-bottom: 14px; }
+  .prefs h3 { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: .02em; color: var(--muted); margin: 0 0 8px; }
+  .prefs h3 + * { margin-bottom: 16px; }
+  .prefs > :last-child { margin-bottom: 0; }
+  .seg { display: grid; grid-template-columns: repeat(3, 1fr); background: var(--bg); border-radius: 12px; padding: 3px; gap: 3px; }
+  .seg button {
+    appearance: none; border: 0; background: transparent; color: var(--text); font: inherit; font-size: 14px;
+    padding: 8px 4px; border-radius: 9px; cursor: pointer;
+  }
+  .seg button[aria-pressed="true"] { background: var(--card); box-shadow: var(--shadow); font-weight: 600; }
+  .swatches { display: flex; gap: 12px; flex-wrap: wrap; }
+  .swatch {
+    appearance: none; border: 0; cursor: pointer; padding: 0;
+    width: 34px; height: 34px; border-radius: 50%;
+    background: var(--c); box-shadow: 0 0 0 2px var(--card), 0 0 0 4px transparent;
+  }
+  .swatch[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--card), 0 0 0 4px var(--text); }
+  .prefs small { display: block; color: var(--muted); font-size: 12px; margin-top: 6px; }
 
   /* ---------- hero ---------- */
   .hero {
@@ -268,7 +297,8 @@
   let selectedDay = null;
   let fetchError = false;
   let lastFetch = null;
-  let animate = true;   // entry animation only on first render and day changes, not on periodic refreshes
+  let animate = true;
+  let prefsOpen = false;   // entry animation only on first render and day changes, not on periodic refreshes
 
   // ---------- helpers ----------
   const pad = n => String(n).padStart(2, '0');
@@ -280,9 +310,9 @@
   const dash = t => t.replace('-', '–');
 
   function duration(min) {
-    if (min < 60) return `${min} Min`;
+    if (min < 60) return `${min} min`;
     const h = Math.floor(min / 60), m = min % 60;
-    return m ? `${h} Std ${m} Min` : `${h} Std`;
+    return m ? `${h} h ${m} min` : `${h} h`;
   }
 
   function storageGet() { try { return localStorage.getItem(STORAGE_KEY) || ''; } catch { return ''; } }
@@ -293,9 +323,9 @@
   function dayTitle(key) {
     const today = dateKey(new Date());
     const t = new Date(); t.setDate(t.getDate() + 1);
-    const long = parseKey(key).toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' });
-    if (key === today) return ['Heute', long];
-    if (key === dateKey(t)) return ['Morgen', long];
+    const long = parseKey(key).toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' });
+    if (key === today) return ['Today', long];
+    if (key === dateKey(t)) return ['Tomorrow', long];
     return [long.split(',')[0], long.split(',').slice(1).join(',').trim()];
   }
 
@@ -423,7 +453,7 @@
     const today = days[0].e;
     const status = kind === 'free' ? 'free' : kind === 'meeting' ? 'meeting' : 'call';
     return {
-      v: 1, name: 'Patti', status,
+      v: 1, name: 'Alex', status,
       since: kind === 'free' ? today[0].e : fmt(r5(n - 22)),
       until: status === 'free' ? '' : today[1].e,
       next: status === 'free' ? `${today[1].s}-${today[1].e}` : `${today[2].s}-${today[2].e}`,
@@ -434,7 +464,7 @@
   // ---------- views ----------
   function heroView(today) {
     if (!snapshot) {
-      return { state: 'var(--off)', headline: 'Noch keine Daten', sub: 'Sobald der Rechner läuft, erscheint hier der Status.' };
+      return { state: 'var(--off)', headline: 'No data yet', sub: 'The status appears here as soon as the computer is running.' };
     }
     const s = snapshot;
     const ageMin = (Date.now() - Date.parse(s.ts)) / 60000;
@@ -442,8 +472,8 @@
       const t = new Date(Date.parse(s.ts));
       const when = dateKey(t) === dateKey(new Date())
         ? `${pad(t.getHours())}:${pad(t.getMinutes())}`
-        : t.toLocaleDateString('de-DE', { weekday: 'short', day: 'numeric', month: 'numeric' }) + `, ${pad(t.getHours())}:${pad(t.getMinutes())}`;
-      return { state: 'var(--off)', headline: 'Rechner aus', sub: `Letzte Meldung ${when}` };
+        : t.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'numeric' }) + `, ${pad(t.getHours())}:${pad(t.getMinutes())}`;
+      return { state: 'var(--off)', headline: 'Computer offline', sub: `Last update ${when}` };
     }
 
     const n = nowMin();
@@ -461,41 +491,41 @@
       const start = blockStart ?? (s.since ? toMin(s.since) : n);
       const total = Math.max(1, end - start);
       const pct = Math.max(0, Math.min(100, ((n - start) / total) * 100));
-      view.progress = { pct, left: `${fmt(start)}`, right: `bis ${s.until}`, remain: Math.max(0, end - n) };
+      view.progress = { pct, left: `${fmt(start)}`, right: `until ${s.until}`, remain: Math.max(0, end - n) };
     };
 
     switch (s.status) {
       case 'call': {
-        view.state = 'var(--call)'; view.headline = 'Im Call'; view.pulse = true;
+        view.state = 'var(--call)'; view.headline = 'In a call'; view.pulse = true;
         const since = s.since ? Math.max(0, n - toMin(s.since)) : null;
-        view.sub = since !== null ? `seit ${s.since} · ${duration(since)}` : '';
+        view.sub = since !== null ? `since ${s.since} · ${duration(since)}` : '';
         withProgress();
-        if (nextText) view.next = ['Danach', nextText];
+        if (nextText) view.next = ['Next', nextText];
         break;
       }
       case 'meeting':
-        view.state = 'var(--meeting)'; view.headline = 'Im Termin';
-        view.sub = `laut Kalender bis ${s.until}`;
+        view.state = 'var(--meeting)'; view.headline = 'In a meeting';
+        view.sub = `per calendar until ${s.until}`;
         withProgress();
-        if (nextText) view.next = ['Danach', nextText];
+        if (nextText) view.next = ['Next', nextText];
         break;
       case 'away':
-        view.state = 'var(--away)'; view.headline = 'Abwesend';
-        view.sub = s.until ? `bis ${s.until}` : 'laut Kalender';
+        view.state = 'var(--away)'; view.headline = 'Away';
+        view.sub = s.until ? `until ${s.until}` : 'per calendar';
         break;
       case 'paused':
-        view.state = 'var(--off)'; view.headline = 'Pausiert';
-        view.sub = 'Status und Kalender werden gerade nicht geteilt';
+        view.state = 'var(--off)'; view.headline = 'Paused';
+        view.sub = 'Status and calendar are currently not shared';
         break;
       default: {
-        view.state = 'var(--free)'; view.headline = 'Frei';
+        view.state = 'var(--free)'; view.headline = 'Free';
         if (s.next) {
           const start = toMin(s.next.split('-')[0]);
           const remain = start - n;
-          view.sub = remain > 0 ? `noch ${duration(remain)} · bis ${s.next.split('-')[0]}` : `bis ${s.next.split('-')[0]}`;
-          view.next = ['Nächster Termin', nextText];
+          view.sub = remain > 0 ? `for ${duration(remain)} · until ${s.next.split('-')[0]}` : `until ${s.next.split('-')[0]}`;
+          view.next = ['Next meeting', nextText];
         } else {
-          view.sub = 'Heute keine weiteren Termine';
+          view.sub = 'No more meetings today';
         }
       }
     }
@@ -514,7 +544,7 @@
     if (v.progress) {
       html += `<div class="progress">
           <div class="bar"><i style="width:${v.progress.pct.toFixed(1)}%"></i></div>
-          <div class="bar-legend"><span>${esc(v.progress.left)}</span><span><b>noch ${esc(duration(v.progress.remain))}</b> · ${esc(v.progress.right)}</span></div>
+          <div class="bar-legend"><span>${esc(v.progress.left)}</span><span><b>${esc(duration(v.progress.remain))} left</b> · ${esc(v.progress.right)}</span></div>
         </div>`;
     }
     if (v.next) html += `<div class="next"><span>${esc(v.next[0])}</span><span>${esc(v.next[1])}</span></div>`;
@@ -523,28 +553,28 @@
 
   function slotsHtml(day, isToday) {
     const gaps = freeGaps(day, isToday);
-    const title = isToday ? 'Gut erreichbar heute' : 'Freie Zeiten';
+    const title = isToday ? 'Available today' : 'Free time';
     let html = `<div class="label">${title}</div>`;
-    if ((day.a || '').includes('o')) return html + `<p class="slots-empty">Ganztägig abwesend.</p>`;
-    if (!gaps.length) return html + `<p class="slots-empty">${isToday ? 'Heute keine freien Zeiten mehr.' : 'Keine freien Zeiten.'}</p>`;
+    if ((day.a || '').includes('o')) return html + `<p class="slots-empty">Away all day.</p>`;
+    if (!gaps.length) return html + `<p class="slots-empty">${isToday ? 'No more free time today.' : 'No free time.'}</p>`;
     const n = nowMin();
     html += '<div class="slots">';
     for (const [a, b] of gaps) {
       const isNow = isToday && a <= n;
-      html += `<div class="slot${isNow ? ' now' : ''}"><div class="t">${isNow ? 'jetzt' : fmt(a)}–${fmt(b)}</div><div class="d">${duration(b - Math.max(a, isToday ? n : a))}</div></div>`;
+      html += `<div class="slot${isNow ? ' now' : ''}"><div class="t">${isNow ? 'now' : fmt(a)}–${fmt(b)}</div><div class="d">${duration(b - Math.max(a, isToday ? n : a))}</div></div>`;
     }
     return html + '</div>';
   }
 
   function weekHtml(days) {
     const todayKey = dateKey(new Date());
-    let html = '<div class="label">Woche</div><nav class="card week" aria-label="Tag wählen">';
+    let html = '<div class="label">Week</div><nav class="card week" aria-label="Choose day">';
     for (const d of days) {
       const date = parseKey(d.d);
-      const name = date.toLocaleDateString('de-DE', { weekday: 'short' }).replace('.', '');
+      const name = date.toLocaleDateString(undefined, { weekday: 'short' }).replace('.', '');
       const load = dayLoad(d);
       const away = (d.a || '').includes('o');
-      html += `<button class="wd${d.d === todayKey ? ' today' : ''}" data-day="${d.d}" aria-pressed="${d.d === selectedDay}" aria-label="${esc(date.toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' }))}">
+      html += `<button class="wd${d.d === todayKey ? ' today' : ''}" data-day="${d.d}" aria-pressed="${d.d === selectedDay}" aria-label="${esc(date.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' }))}">
         <span class="n">${esc(name)}</span><span class="num">${date.getDate()}</span>
         <span class="load${away ? ' away' : ''}"><i style="width:${Math.round(load * 100)}%"></i></span>
       </button>`;
@@ -579,14 +609,14 @@
   function dayHtml(day, isToday, stateColor) {
     const [title, subtitle] = dayTitle(day.d);
     const busyCount = day.e.filter(e => e.k !== 't').length;
-    let html = `<section class="card day${animate ? ' fade' : ''}"><div class="day-title"><h2>${esc(title)}</h2><span>${esc(subtitle)}${day.e.length ? ` · ${busyCount} Termin${busyCount === 1 ? '' : 'e'}` : ''}</span></div>`;
+    let html = `<section class="card day${animate ? ' fade' : ''}"><div class="day-title"><h2>${esc(title)}</h2><span>${esc(subtitle)}${day.e.length ? ` · ${busyCount} meeting${busyCount === 1 ? '' : 's'}` : ''}</span></div>`;
 
-    const allDay = { o: ['Ganztägig abwesend', 'var(--oof-bg)'], b: ['Ganztägig beschäftigt', 'var(--busy-bg)'], t: ['Ganztägig mit Vorbehalt', 'var(--tent-bg)'] };
+    const allDay = { o: ['Away all day', 'var(--oof-bg)'], b: ['Busy all day', 'var(--busy-bg)'], t: ['Tentative all day', 'var(--tent-bg)'] };
     for (const k of (day.a || '').split('')) {
       if (allDay[k]) html += `<div class="allday" style="background:${allDay[k][1]}">${allDay[k][0]}</div>`;
     }
     if (!day.e.length) {
-      return html + `<div class="empty">${(day.a || '').includes('o') ? '' : 'Keine Termine – den ganzen Tag frei'}</div></section>`;
+      return html + `<div class="empty">${(day.a || '').includes('o') ? '' : 'No meetings – free all day'}</div></section>`;
     }
 
     const [startMin, endMin] = dayWindow(day, isToday);
@@ -606,12 +636,12 @@
       for (const [a, b, past] of parts) {
         const h = y(b) - y(a) - 4;
         if (h < 14) continue;
-        const label = h >= 22 && !past ? `frei · ${duration(b - a)}` : '';
+        const label = h >= 22 && !past ? `free · ${duration(b - a)}` : '';
         t += `<div class="gap${past ? ' past' : ''}" style="top:${y(a) + 2}px;height:${h}px;left:4px;right:2px">${label}</div>`;
       }
     }
 
-    const kindText = { b: '', t: 'mit Vorbehalt', o: 'abwesend' };
+    const kindText = { b: '', t: 'tentative', o: 'away' };
     for (const ev of layoutColumns(day.e)) {
       const top = y(ev.a) + 1;
       const height = Math.max(22, y(ev.b) - y(ev.a) - 2);
@@ -633,14 +663,50 @@
     return html + t + `</section>`;
   }
 
+  // ---------- appearance ----------
+  const ACCENTS = [
+    ['blue', 'Blue', '#3a6fd8'], ['teal', 'Teal', '#0f8b8d'],
+    ['rose', 'Rose', '#c2477a'], ['amber', 'Amber', '#b7791f'],
+  ];
+  const lightQuery = window.matchMedia ? matchMedia('(prefers-color-scheme: light)') : null;
+
+  function getPref(key, fallback) { try { return localStorage.getItem(key) || fallback; } catch { return fallback; } }
+  function setPref(key, value) { try { localStorage.setItem(key, value); } catch { /* storage unavailable */ } }
+
+  /** Applies mode (auto/light/dark) and accent. Auto follows the system and falls back to dark. */
+  function applyAppearance() {
+    const mode = getPref('status-mode', 'auto');
+    const light = mode === 'light' || (mode === 'auto' && !!lightQuery && lightQuery.matches);
+    document.documentElement.setAttribute('data-theme', light ? 'light' : 'dark');
+    const accent = getPref('status-accent', 'blue');
+    document.documentElement.setAttribute('data-accent', ACCENTS.some(a => a[0] === accent) ? accent : 'blue');
+    const bg = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', bg || '#121214');
+  }
+
+  function prefsHtml() {
+    const mode = getPref('status-mode', 'auto');
+    const accent = getPref('status-accent', 'blue');
+    const modes = [['auto', 'Automatic'], ['light', 'Light'], ['dark', 'Dark']];
+    return `<section class="card prefs fade" aria-label="Appearance">
+        <h3>Appearance</h3>
+        <div class="seg">${modes.map(([v, l]) => `<button data-mode="${v}" aria-pressed="${v === mode}">${l}</button>`).join('')}</div>
+        <small>Automatic follows the device setting.</small>
+        <h3 style="margin-top:16px">Color</h3>
+        <div class="swatches">${ACCENTS.map(([v, l, c]) => `<button class="swatch" style="--c:${c}" data-accent="${v}" aria-label="${l}" title="${l}" aria-pressed="${v === accent}"></button>`).join('')}</div>
+      </section>`;
+  }
+
+  const GEAR = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18z" fill="currentColor"/></svg>';
+
   function renderSetup() {
     app.innerHTML = `
       <div class="card setup fade">
-        <h1>Einrichten</h1>
-        <p>Gib den Kanalnamen ein, den du bekommen hast (z.&nbsp;B. <code>status-abc123…</code>).</p>
+        <h1>Set up</h1>
+        <p>Enter the channel name you received (e.g. <code>status-abc123…</code>).</p>
         <form id="f">
           <input id="t" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="status-…" required>
-          <button type="submit">Speichern</button>
+          <button type="submit">Save</button>
         </form>
       </div>`;
     document.getElementById('f').addEventListener('submit', e => {
@@ -662,7 +728,8 @@
 
     const updated = lastFetch ? `${pad(lastFetch.getHours())}:${pad(lastFetch.getMinutes())}` : '–';
     const name = snapshot?.name || '';
-    let html = `<div class="top"><h1>${esc(name || 'Status')}</h1><span class="pill${fetchError ? ' err' : ''}">${fetchError ? 'Keine Verbindung' : `Stand ${updated}`}</span></div>`;
+    let html = `<div class="top"><h1>${esc(name || 'Status')}</h1><div class="top-right"><span class="pill${fetchError ? ' err' : ''}">${fetchError ? 'No connection' : `Updated ${updated}`}</span><button class="icon-btn" id="prefs-btn" aria-label="Appearance" aria-expanded="${prefsOpen}">${GEAR}</button></div></div>`;
+    if (prefsOpen) html += prefsHtml();
     html += heroHtml(hero);
 
     if (days.length && !paused && day) {
@@ -670,16 +737,24 @@
       html += weekHtml(days);
       html += dayHtml(day, day.d === todayKey, hero.state);
       html += `<div class="legend">
-          <span><i style="background:var(--busy)"></i>Beschäftigt</span>
-          <span><i style="background:var(--tent)"></i>Mit Vorbehalt</span>
-          <span><i style="background:var(--oof)"></i>Abwesend</span>
-          <span><i style="background:var(--free-bg);outline:1.5px dashed var(--freec);outline-offset:-1.5px"></i>Frei</span>
+          <span><i style="background:var(--busy)"></i>Busy</span>
+          <span><i style="background:var(--tent)"></i>Tentative</span>
+          <span><i style="background:var(--oof)"></i>Away</span>
+          <span><i style="background:var(--free-bg);outline:1.5px dashed var(--freec);outline-offset:-1.5px"></i>Free</span>
         </div>`;
     }
-    html += `<footer>Aktualisiert sich automatisch</footer>`;
+    html += `<footer>Updates automatically</footer>`;
 
     app.innerHTML = html;
     animate = false;
+    app.querySelector('#prefs-btn')?.addEventListener('click', () => { prefsOpen = !prefsOpen; animate = true; render(); });
+    app.querySelector('.prefs')?.addEventListener('click', e => {
+      const m = e.target.closest('[data-mode]');
+      const a = e.target.closest('[data-accent]');
+      if (m) setPref('status-mode', m.dataset.mode);
+      if (a) setPref('status-accent', a.dataset.accent);
+      if (m || a) { applyAppearance(); render(); }
+    });
     app.querySelector('.week')?.addEventListener('click', e => {
       const b = e.target.closest('.wd');
       if (!b) return;
@@ -700,6 +775,12 @@
     poll();
   }
 
+  if (lightQuery) {
+    const onSystemChange = () => { applyAppearance(); render(); };
+    if (lightQuery.addEventListener) lightQuery.addEventListener('change', onSystemChange);
+    else if (lightQuery.addListener) lightQuery.addListener(onSystemChange);
+  }
+  applyAppearance();
   window.addEventListener('hashchange', init);
   document.addEventListener('visibilitychange', () => { if (!document.hidden) { poll(); render(); } });
   setInterval(poll, POLL_MS);
